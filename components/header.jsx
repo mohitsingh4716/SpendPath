@@ -13,6 +13,20 @@ const Header = () => {
             <Image src={"/logo.svg"}  alt='SpendPath' width={200} height={60}
              className='h-12 w-60 object-contain'/>
           </Link>
+
+          <div className="hidden md:flex items-center space-x-8">
+          <SignedOut>
+            <a href="#features" className="text-gray-600 hover:text-blue-600">
+              Features
+            </a>
+            <a
+              href="#testimonials"
+              className="text-gray-600 hover:text-blue-600"
+            >
+              Testimonials
+            </a>
+          </SignedOut>
+        </div>
          
          <div className='flex items-center space-x-4'>
 
