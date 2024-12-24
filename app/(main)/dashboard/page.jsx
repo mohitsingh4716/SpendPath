@@ -27,7 +27,7 @@ async function DashboardPage() {
       </CreateAccountDrawer>
 
       {
-        accounts.length>0 && accounts?.map((account)=>{
+        accounts?.length>0 && accounts?.map((account)=>{
           return <AccountCard key= {account.id} account={account}/>
             
           
