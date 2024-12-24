@@ -10,6 +10,11 @@ const serializeTransaction= (obj)=>{
     if(obj.balance){
         serialized.balance= obj.balance.toNumber();
     }
+    if(obj.amount){
+        serialized.amount= obj.amount.toNumber();
+    }
+
+    return serialized;
 };
 
 export async function createAccount(data){
@@ -19,7 +24,7 @@ export async function createAccount(data){
            throw new Error("Unauthorized")
         }
 
-        const user = await db.findUnique({
+        const user = await db.user.findUnique({
             where:{
                 clerkUserId: userId
             },
@@ -30,8 +35,8 @@ export async function createAccount(data){
 
         // convert balance to float before saving
         const balanceFloat = parseFloat(data.balance);
-        if(isNaN(balance)){
-            throw new Error("Invalid balance")
+        if(isNaN(balanceFloat)){
+            throw new Error("Invalid balance amount")
         }
 
         // check if this is the user's first account
@@ -76,7 +81,48 @@ export async function createAccount(data){
         
     } catch (error) {
         console.log(error.message)
-        throw new Error(error.message);
+        
+    }
+}
+
+export async function getUserAccounts(){
+    try {
+        const {userId}= await auth();
+        if(!userId){
+           throw new Error("Unauthorized")
+        }
+
+        const user = await db.user.findUnique({
+            where:{
+                clerkUserId: userId
+            },
+        });
+        if(!user){
+            throw new Error("user Not found")
+        }
+
+        const accounts = await db.account.findMany({
+            where:{
+                userId: user.id
+            },
+            orderBy: {
+                createdAt: "desc"
+            },
+            include:{
+                _count: {
+                    select: {
+                        transactions: true,
+                    }
+                }
+            }
+        });
+
+        const serializedAccount = accounts.map(serializeTransaction);
+
+       return serializedAccount;
+        
+    } catch (error) {
+        console.log(error.message)
         
     }
 }
