@@ -147,6 +147,8 @@ const TransactionTable = ({ transactions }) => {
       return ;
      }
      deleteFn(selectedIds);
+    //  deleteFn([transaction.id])
+    {console.log("Deleted")}
   }
 
   useEffect(()=>{
@@ -216,7 +218,7 @@ const TransactionTable = ({ transactions }) => {
         </div>
         )}
 
-        {(searchTerm || typeFilter || recurringFilter) && (
+        {(searchTerm || typeFilter || recurringFilter ) && (
           <Button 
           variant="outline" 
           size="icon" 
