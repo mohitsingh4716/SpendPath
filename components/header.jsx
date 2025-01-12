@@ -1,16 +1,20 @@
+
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 import { Button } from './ui/button'
-import { LayoutDashboard, PenBox } from 'lucide-react'
+import { LayoutDashboard,PenBox, } from 'lucide-react'
+
 import { checkUser } from '@/lib/checkUser'
+import ThemeToggle from './theme/themeToggle'
 
 const Header = async () => {
   await checkUser();
+
   
   return (
-    <div className='fixed top-0 w-full bg-white/80 backdrop-blur-md shadow-md z-50 border-b'>
+    <div className='fixed top-0 w-full bg-white/80  dark:bg-white/25 backdrop-blur-md shadow-md z-50 border-b'>
         <nav className='container mx-auto flex justify-between items-center py-4 px-4'>
           <Link href="/">
             <Image src={"/logo.svg"}  alt='SpendPath' width={200} height={60}
@@ -32,6 +36,8 @@ const Header = async () => {
         </div>
          
          <div className='flex items-center space-x-4'>
+
+          <ThemeToggle/>
 
           <SignedIn>
             <Link href={'/dashboard'} className='text-gray-600 hover:text-blue-600 flex items-center gap-2'>
@@ -63,6 +69,7 @@ const Header = async () => {
               }
             }}/>
           </SignedIn>
+
           </div>  
        </nav> 
     </div>

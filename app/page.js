@@ -13,14 +13,14 @@ export default function Home() {
       <HeroSection/>
 
 
-     <section className="py-20 bg-blue-50">
+     <section className="py-20 bg-blue-50  dark:bg-white/55">
        <div className="container mx-auto px-4">
          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
            {
             statsData.map((statData, index)=>(
               <div key={index} className="text-center"> 
               <div className="text-4xl font-bold text-blue-600 mb-2"> {statData.value}</div>
-              <div className="text-gray-600"> {statData.label}</div>
+              <div className="text-gray-600 dark:text-black"> {statData.label}</div>
               </div>
             ))
            }
@@ -48,9 +48,9 @@ export default function Home() {
       </div>
      </section>
 
-     <section className="py-20 bg-blue-50">
+     <section className="py-20 bg-blue-50  dark:bg-white/55">
       <div className="container mx-auto px-4">
-        <h2 className="text-center text-3xl font-bold">How It Works</h2>
+        <h2 className="text-center text-3xl font-bold dark:text-black">How It Works</h2>
         <div className="grid grid-cols-3 gap-10">
           {
             howItWorksData.map((data, index)=>(
@@ -58,7 +58,7 @@ export default function Home() {
                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
                 {data.icon}
                 </div>
-                <h3 className="text-xl  font-semibold">{data.title}</h3>
+                <h3 className="text-xl  font-semibold dark:text-black">{data.title}</h3>
                 <p className="text-gray-600">{data.description}</p>
               </div>
             ))

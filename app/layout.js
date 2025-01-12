@@ -1,8 +1,9 @@
 import{ Inter} from "next/font/google"
 import "./globals.css";
-import Header from "@/components/header";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme/themeProvider";
+import Header from "@/components/header";
 
 const inter = Inter({subset: ["latin"]});
 
@@ -17,8 +18,14 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${inter.className}`}
       >
+         <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
         {/* {header} */}
-        <Header/>
+         <Header/>
 
         <main className="min-h-screen">
         {children}
@@ -26,12 +33,14 @@ export default function RootLayout({ children }) {
         <Toaster richColors />
       
         {/* Footer */}
-        <footer className="bg-blue-50 py-12">
-           <div className="container mx-auto px-4 text-center text-gray-600 flex justify-evenly">
+        <footer className=" py-12 border-t-2">
+           <div className="container mx-auto px-4 text-center text-gray-600 flex justify-evenly ">
             <p>© 2024 Welth. All rights reserved.</p>
             <p>Made with 💖  By Mohit</p>
            </div>
         </footer>
+
+        </ThemeProvider>
       </body>
     </html>
     </ClerkProvider>
