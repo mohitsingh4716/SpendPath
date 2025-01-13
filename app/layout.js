@@ -35,7 +35,7 @@ export default function RootLayout({ children }) {
         {/* Footer */}
         <footer className=" py-12 border-t-2">
            <div className="container mx-auto px-4 text-center text-gray-600 flex justify-evenly ">
-            <p>© 2024 Welth. All rights reserved.</p>
+            <p>© 2024 SpendPath. All rights reserved.</p>
             <p>Made with 💖  By Mohit</p>
            </div>
         </footer>

@@ -51,7 +51,7 @@ export default function Home() {
      <section className="py-20 bg-blue-50  dark:bg-white/55">
       <div className="container mx-auto px-4">
         <h2 className="text-center text-3xl font-bold dark:text-black">How It Works</h2>
-        <div className="grid grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {
             howItWorksData.map((data, index)=>(
               <div key={index} className="p-6 space-y-4 text-center">
@@ -71,7 +71,7 @@ export default function Home() {
      <section id="testimonials" className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-center text-3xl font-bold">What Our Users Say</h2>
-          <div className="grid grid-cols-3 md:grid-cols-3 gap-8 pt-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
              {
                 testimonialsData.map((data, index)=>{
                   return (
