@@ -17,8 +17,8 @@ const Header = async () => {
     <div className='fixed top-0 w-full bg-white/80  dark:bg-white/25 backdrop-blur-md shadow-md z-50 border-b'>
         <nav className='container mx-auto flex justify-between items-center py-4 px-4'>
           <Link href="/">
-            <Image src={"/logo.svg"}  alt='SpendPath' width={200} height={60}
-             className='h-12 w-60 object-contain'/>
+            <Image src={"/logo1.svg"}  alt='SpendPath' width={200} height={60}
+             className='h-10 w-48 object-contain'/>
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
@@ -35,7 +35,7 @@ const Header = async () => {
           </SignedOut>
         </div>
          
-         <div className='flex items-center space-x-4'>
+         <div className='flex items-center md:space-x-4 space-x-1'>
 
           <ThemeToggle/>
 
