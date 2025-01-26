@@ -123,6 +123,7 @@ export async function getUserAccounts(){
         
     } catch (error) {
         console.log(error.message)
+        return [];
         
     }
 }
