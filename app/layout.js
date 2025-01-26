@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme/themeProvider";
 import Header from "@/components/header";
 
-const inter = Inter({subset: ["latin"]});
+const inter = Inter({subsets: ['latin'],preload: true,});
 
 export const metadata = {
   title: "SpendPath",

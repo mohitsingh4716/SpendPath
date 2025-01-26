@@ -3,6 +3,8 @@ import { defaultCategories } from '@/data/categories';
 import React from 'react'
 import AddTransactionForm from '../_components/transaction-form';
 
+export const dynamic = 'force-dynamic';
+
 const AddTransactionPage = async () => {
     const accounts= await getUserAccounts();
 
