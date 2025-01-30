@@ -1,9 +1,11 @@
-# SpendPath
- 
 
-**SpendPath** is a full-stack AI-powered finance management platform designed to simplify and optimize your financial journey. This project leverages modern technologies to provide seamless financial insights and effortless transaction management, with a robust and scalable architecture. Deployed live on [click](https://spend-path.vercel.app/), SpendPath ensures top-notch performance and accessibility.
+# SpendPath: Effortless spending management
 
----
+
+**SpendPath** is a full-stack AI-powered finance management platform designed to simplify and optimize your financial journey. This project leverages modern technologies to provide seamless financial insights and effortless transaction management.
+
+ Deployed live on [Vercel](https://spend-path.vercel.app/), SpendPath ensures top-notch performance and accessibility.
+
 
 ## Features
 
@@ -59,7 +61,6 @@
 - **Clerk**: Simplified and secure authentication and user management.
 - **Vercel**: Deployment platform offering fast and reliable hosting.
 
----
 
 ## Deployment
 
@@ -72,7 +73,7 @@ Experience the full platform: [SpendPath Live](https://spend-path.vercel.app)
 
 ## Getting Started
 
-To set up and run the Modern_Todo development server:
+To set up and run the SpendPath development server:
 ### Installation Steps
 
 1. Clone the repository:
@@ -100,7 +101,7 @@ To set up and run the Modern_Todo development server:
         RESEND_API_KEY=
         ARCJET_KEY=
     ```   
-4. Install NPM packages
+4. Install dependencies:
    ```sh
    npm install --legacy-peer-deps
     ```
@@ -112,4 +113,3 @@ To set up and run the Modern_Todo development server:
  Start the development server.
  Open [ http://localhost:3000/]( http://localhost:3000/) in your browser to access the application.
 
----
