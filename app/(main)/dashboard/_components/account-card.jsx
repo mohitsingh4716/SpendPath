@@ -3,7 +3,6 @@ import { updateDefaultAccount } from "@/actions/accounts";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,

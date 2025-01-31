@@ -17,7 +17,7 @@ const Header = async () => {
     <div className='fixed top-0 w-full bg-white/80  dark:bg-white/25 backdrop-blur-md shadow-md z-50 border-b'>
         <nav className='container mx-auto flex justify-between items-center py-4 px-4'>
           <Link href="/">
-            <Image src={"/logo1.svg"}  alt='SpendPath' width={200} height={60}
+            <Image src={"/logo1.svg"} priority alt='SpendPath' width={200} height={60}
              className='h-10 w-48 object-contain'/>
           </Link>
 
@@ -56,7 +56,7 @@ const Header = async () => {
           </SignedIn>
         
          <SignedOut>
-            <SignInButton forceRedirectUrl='/dashboard'>
+            <SignInButton fallbackRedirectUrl='/dashboard'>
                 <Button variant="outline">
                   Login
                 </Button>

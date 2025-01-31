@@ -4,7 +4,7 @@ import Link from 'next/link'
 import React, { useEffect, useRef } from 'react'
 import { Button } from './ui/button'
 import Image from 'next/image'
-import { SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
+import { SignedOut, SignUpButton } from '@clerk/nextjs';
 
 const HeroSection = () => {
     const imgRef= useRef()
@@ -48,7 +48,7 @@ const HeroSection = () => {
                    </Button> 
                 </Link> */}
                  <SignedOut>
-                    <SignUpButton forceRedirectUrl='/dashboard'>
+                    <SignUpButton fallbackRedirectUrl='/dashboard'>
                         <Button className="px-8" size="lg">
                         Get Started
                         </Button>
@@ -67,6 +67,7 @@ const HeroSection = () => {
                 <div ref={imgRef} className='hero-image'>
                     <Image
                       src="/open.jpeg"
+                      priority
                       width={1280}
                       height={720}
                       alt='Dashboard preview'
