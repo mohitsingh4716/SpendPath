@@ -48,7 +48,7 @@ const HeroSection = () => {
                    </Button> 
                 </Link> */}
                  <SignedOut>
-                    <SignUpButton fallbackRedirectUrl='/dashboard'>
+                    <SignUpButton forceRedirectUrl='/dashboard'>
                         <Button className="px-8" size="lg">
                         Get Started
                         </Button>
