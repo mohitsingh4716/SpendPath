@@ -124,7 +124,7 @@ const AccountChart = ({ transactions, userInfo }) => {
 
     const link = document.createElement('a');
     link.href = pdfUrl;
-    link.download = 'transactions.pdf';
+    link.download = 'SpendPath_transactions.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
