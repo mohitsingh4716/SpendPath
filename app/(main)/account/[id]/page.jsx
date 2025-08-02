@@ -4,11 +4,18 @@ import React, { Suspense } from 'react'
 import TransactionTable from '../_components/transactions-table';
 import { BarLoader } from 'react-spinners';
 import AccountChart from '../_components/accountChart';
+import { getUserInfo } from '@/actions/user';
 
 const AccountPage = async ({params}) => {
     const { id } = await params
 
     const accountData= await getAccountWithTransactions(id);
+
+    const userInfo = await getUserInfo();
+
+    if(!userInfo){
+        notFound();
+    }
 
     if(!accountData){
         notFound();
@@ -16,7 +23,8 @@ const AccountPage = async ({params}) => {
 
     const {transactions, ...account}= accountData;
     
-     {/* { console.log(JSON.stringify(accountData))};  */}
+    //  { console.log(JSON.stringify(account))};
+    //  { console.log(JSON.stringify(userInfo))};
 
   return (
     <div className='space-y-8 '>
@@ -40,7 +48,7 @@ const AccountPage = async ({params}) => {
      <Suspense 
      fallback={<BarLoader className='mt-4' width={"100%"} color='#9333ea'/>}
      >
-        <AccountChart transactions={transactions}/>
+        <AccountChart transactions={transactions} userInfo={userInfo}/>
      </Suspense>
 
      {/* Transactions Table */}

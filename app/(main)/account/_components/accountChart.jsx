@@ -1,4 +1,6 @@
 "use client";
+import { generateHTMLTemplate } from "@/app/lib/htmlTemplate";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { endOfDay, format, startOfDay, subDays } from "date-fns";
+import { Download } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
   Bar,
@@ -33,7 +36,7 @@ const DATE_RANGES = {
   All: { label: "All Time", days: null },
 };
 
-const AccountChart = ({ transactions }) => {
+const AccountChart = ({ transactions, userInfo }) => {
   const [dateRange, setDateRange] = useState("1M");
 
   const filterData = useMemo(() => {
@@ -84,12 +87,56 @@ const AccountChart = ({ transactions }) => {
 
   //  console.log(totals);
 
+  const handleDownloadPDF = async () => {
+    // Get the original filtered transactions for the PDF
+    const range = DATE_RANGES[dateRange];
+    const now = new Date();
+    const startDate = range.days
+      ? startOfDay(subDays(now, range.days))
+      : startOfDay(new Date(0));
+    
+    const filteredTransactions = transactions.filter(
+      (t) => new Date(t.date) >= startDate && new Date(t.date) <= endOfDay(now)
+    );
+    
+    const chartTotals = { ...totals };
+
+   
+    const userDetails = {
+      name: userInfo?.name || "",
+      email: userInfo?.email || "",
+    };
+
+    const htmlContent = generateHTMLTemplate(filteredTransactions, chartTotals, userDetails);
+
+    const response = await fetch('/api/generatePdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ htmlContent }),
+    });
+
+    // console.log(response);
+
+    const pdfBlob = await response.blob();
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    link.download = 'transactions.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
         <CardTitle className="text-base font-normal">
           Transactions Overview
         </CardTitle>
+      <div className="flex items-center gap-2">
         <Select defaultValue={dateRange} onValueChange={setDateRange}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Select Range" />
@@ -104,6 +151,10 @@ const AccountChart = ({ transactions }) => {
             })}
           </SelectContent>
         </Select>
+
+        {/* Download pdf of Transactions */}
+        <Button variant="outline" onClick={handleDownloadPDF}><Download className="h-6 w-6"/>Download PDF</Button>
+        </div>
       </CardHeader>
 
       <CardContent>
