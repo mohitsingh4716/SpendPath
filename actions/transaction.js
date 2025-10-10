@@ -122,13 +122,21 @@ function calculateNextRecurringDate(startDate, interval){
 
 export async function scanReceipt(file){
    try {
-    const model= genAI.getGenerativeModel({model: "gemini-1.5-flash"});
+    const model= genAI.getGenerativeModel({model: "gemini-2.5-flash"});
 
     // convert file to array buffer
     const arrayBuffer= await file.arrayBuffer();
 
     // convert arrayBuffer to base64
     const base64String= Buffer.from(arrayBuffer).toString("base64");
+
+     // Prepare the image part for the API
+    const imagePart = {
+      inlineData: {
+        data: base64String,
+        mimeType: file.type, // e.g., "image/png" or "image/jpeg"
+      },
+    };
 
 
     const prompt= `Analyze this receipt image and extract the following information in JSON format:
@@ -149,16 +157,30 @@ export async function scanReceipt(file){
       If its not a recipt, return an empty object`;
 
 
-    const result = await model.generateContent([
-        {
-            inlineData:{
-                data:base64String,
-                mimeType: file.type,
-            },
+    // const result = await model.generateContent([
+    //     {
+    //         inlineData:{
+    //             data:base64String,
+    //             mimeType: file.type,
+    //         },
             
+    //     },
+    //     prompt,
+    // ]);
+
+       //  Updated request structure
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [imagePart, { text: prompt }],
         },
-        prompt,
-    ]);
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
+
       
      const response = await result.response;
      const text= response.text();
