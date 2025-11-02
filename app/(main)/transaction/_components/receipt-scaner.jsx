@@ -21,6 +21,11 @@ const ReceiptScanner = ({ onScanComplete }) => {
       toast.error("File size should be less than 5MB");
       return;
     }
+    if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
+    toast.error("Unsupported file type. Please upload an image or a PDF.");
+    return;
+    }
+
 
     await scanReceiptFn(file);
   };
@@ -38,7 +43,7 @@ const ReceiptScanner = ({ onScanComplete }) => {
         type="file"
         ref={inputRef}
         className="hidden"
-        accept="image/*"
+        accept="image/*,.pdf"
         capture="environment"
         onChange={(e) => {
           const file = e.target.files?.[0];

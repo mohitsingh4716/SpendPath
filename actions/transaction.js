@@ -131,15 +131,15 @@ export async function scanReceipt(file){
     const base64String= Buffer.from(arrayBuffer).toString("base64");
 
      // Prepare the image part for the API
-    const imagePart = {
+    const filePart = {
       inlineData: {
         data: base64String,
-        mimeType: file.type, // e.g., "image/png" or "image/jpeg"
+        mimeType: file.type, // e.g., "image/png" or "image/jpeg, "application/pdf"
       },
     };
 
 
-    const prompt= `Analyze this receipt image and extract the following information in JSON format:
+    const prompt= `Analyze this receipt document (it could be an image or a PDF) and extract the following information in JSON format:
       - Total amount (just the number)
       - Date (in ISO format)
       - Description or items purchased (brief summary)
@@ -173,7 +173,7 @@ export async function scanReceipt(file){
       contents: [
         {
           role: "user",
-          parts: [imagePart, { text: prompt }],
+          parts: [filePart, { text: prompt }],
         },
       ],
       generationConfig: {
