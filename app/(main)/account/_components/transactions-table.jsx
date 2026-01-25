@@ -47,12 +47,23 @@ const TransactionTable = ({ transactions }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [recurringFilter, setRecurringFilter] = useState("");
+
+
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(searchTerm);
+  }, 600); 
+
+  return () => clearTimeout(timer);
+}, [searchTerm]);
  
   const filteredAndSortedTransactions = useMemo(()=>{
     let result = [...transactions];
 
     // Apply search filter
-    if(searchTerm){
+    if(debouncedSearch){
       const searchLower= searchTerm.toLowerCase();
       result= result.filter((transaction)=>
         transaction.description.toLowerCase().includes(searchLower)
@@ -97,11 +108,14 @@ const TransactionTable = ({ transactions }) => {
 
   },[
     transactions,
-    searchTerm,
+    debouncedSearch,
     typeFilter,
     recurringFilter,
     sortConfig
   ]);
+
+  // console.log("Raw :", searchTerm);
+// console.log("Debounced :", debouncedSearch);
 
   const handleSort = (field) => {
     setSortConfig((current)=>({
