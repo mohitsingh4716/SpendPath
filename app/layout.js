@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme/themeProvider";
 import Header from "@/components/header";
+import Footer from "@/components/footer";
 
 const inter = Inter({subsets: ['latin'],preload: true,});
 
@@ -15,7 +16,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className}`}
       >
          <ThemeProvider
@@ -33,12 +34,13 @@ export default function RootLayout({ children }) {
         <Toaster richColors />
       
         {/* Footer */}
-        <footer className=" py-8 border-t-2">
+        <Footer/>
+        {/* <footer className=" py-8 border-t-2">
            <div className="container mx-auto px-4 text-center text-gray-600 flex justify-evenly ">
-            <p>© 2025 SpendPath. All rights reserved.</p>
-            {/* <p>Made with 💖  By Mohit</p> */}
+            <p>© {new Date().getFullYear()} SpendPath. All rights reserved.</p>
+            <p>Made with 💖  By Mohit</p>
            </div>
-        </footer>
+        </footer> */}
 
         </ThemeProvider>
       </body>

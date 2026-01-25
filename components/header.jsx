@@ -1,13 +1,11 @@
 
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
-import { Button } from './ui/button'
-import { LayoutDashboard,PenBox, } from 'lucide-react'
+
 
 import { checkUser } from '@/lib/checkUser'
-import ThemeToggle from './theme/themeToggle'
+import ClientHeader from './client-header'
 
 const Header = async () => {
   await checkUser();
@@ -21,7 +19,9 @@ const Header = async () => {
              className='h-10 w-48 object-contain'/>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-8">
+          <ClientHeader/>
+
+          {/* <div className="hidden md:flex items-center space-x-8">
           <SignedOut>
             <a href="#features" className="text-gray-600 hover:text-blue-600">
               Features
@@ -70,7 +70,7 @@ const Header = async () => {
             }}/>
           </SignedIn>
 
-          </div>  
+          </div>   */}
        </nav> 
     </div>
   )
