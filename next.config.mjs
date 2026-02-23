@@ -14,6 +14,8 @@ const nextConfig = {
           bodySizeLimit: "5mb",
         },
       },
+
+    serverExternalPackages: ["@sparticuz/chromium"],
 };
 
 export default nextConfig;

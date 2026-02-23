@@ -1,41 +1,39 @@
-
-import { chromium } from 'playwright-core';
+import { chromium } from "playwright-core";
 
 export async function generatePDF(htmlContent) {
-  // Configure browser options based on environment
-  const isDev = process.env.NODE_ENV === 'development';
-  
-  let browserOptions;
-  
-  if (isDev) {
-    // For development, use system Chrome/Chromium
-    browserOptions = {
+  let browser;
+
+  try {
+    // Try serverless chromium first (works on Vercel & locally if installed)
+    const chromiumPkg = (await import("@sparticuz/chromium")).default;
+
+    browser = await chromium.launch({
+      args: chromiumPkg.args,
+      executablePath: await chromiumPkg.executablePath(),
+      headless: chromiumPkg.headless,
+    });
+
+  } catch (err) {
+    console.log("Sparticuz chromium failed, falling back to local browser");
+
+    // fallback for local dev machine
+    browser = await chromium.launch({
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ],
-    };
-  } else {
-    // For production (Vercel), use Sparticuz Chromium
-    const chromiumPkg = await import('@sparticuz/chromium');
-    browserOptions = {
-      args: chromiumPkg.default.args,
-      executablePath: await chromiumPkg.default.executablePath(),
-      headless: chromiumPkg.default.headless,
-    };
+    });
   }
-  
-  const browser = await chromium.launch(browserOptions);
+
   const page = await browser.newPage();
-  await page.setContent(htmlContent);
-  const pdfBuffer = await page.pdf({ format: 'A4' });
-  
+
+  await page.setContent(htmlContent, {
+    waitUntil: "networkidle",
+  });
+
+  const pdfBuffer = await page.pdf({
+    format: "A4",
+    printBackground: true,
+  });
+
   await browser.close();
-  
+
   return pdfBuffer;
 }
