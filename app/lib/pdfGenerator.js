@@ -4,19 +4,22 @@ export async function generatePDF(htmlContent) {
   let browser;
 
   try {
-    // Try serverless chromium first (works on Vercel & locally if installed)
+    // Try Sparticuz Chromium (works on Vercel)
     const chromiumPkg = (await import("@sparticuz/chromium")).default;
+    const executablePath = await chromiumPkg.executablePath();
 
     browser = await chromium.launch({
       args: chromiumPkg.args,
-      executablePath: await chromiumPkg.executablePath(),
-      headless: chromiumPkg.headless,
+      executablePath,
+      headless: true,
     });
 
-  } catch (err) {
-    console.log("Sparticuz chromium failed, falling back to local browser");
+    console.log("Using Sparticuz Chromium");
 
-    // fallback for local dev machine
+  } catch (err) {
+    // Fallback to local browser automatically
+    console.log("Using local Playwright browser");
+
     browser = await chromium.launch({
       headless: true,
     });
