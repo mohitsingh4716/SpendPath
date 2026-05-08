@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 const COLORS= [
@@ -38,45 +38,63 @@ const COLORS= [
 ]
 
 const DashboardOverview = ({ accounts, transactions }) => {
+  const safeAccounts = accounts || [];
+  const safeTransactions = transactions || [];
+  const [mounted, setMounted] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState(
-    accounts?.find((a) => a.isDefault)?.id || accounts?.[0]?.id
+    safeAccounts.find((a) => a.isDefault)?.id || safeAccounts[0]?.id || ""
   );
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedAccountId && safeAccounts.length > 0) {
+      setSelectedAccountId(
+        safeAccounts.find((account) => account.isDefault)?.id || safeAccounts[0].id
+      );
+    }
+  }, [safeAccounts, selectedAccountId]);
+
   // Filter transactions by selected account
-  const accountTransactions = transactions.filter(
-    (t) => t.accountId === selectedAccountId
+  const accountTransactions = useMemo(
+    () => safeTransactions.filter((t) => t.accountId === selectedAccountId),
+    [safeTransactions, selectedAccountId]
   );
 
   const recentTransactions = accountTransactions.slice(0, 5);
 
   //   cal expense breakdown for curr month
-  const currentDate = new Date();
-  const currentMonthExpenses = accountTransactions.filter((t) => {
-    const transactionDate = new Date(t.date);
-    return (
-      t.type === "EXPENSE" &&
-      transactionDate.getMonth() === currentDate.getMonth() &&
-      transactionDate.getFullYear() === currentDate.getFullYear()
-    );
-  });
+  const currentMonthExpenses = useMemo(() => {
+    const currentDate = new Date();
+    return accountTransactions.filter((t) => {
+      const transactionDate = new Date(t.date);
+      return (
+        t.type === "EXPENSE" &&
+        transactionDate.getMonth() === currentDate.getMonth() &&
+        transactionDate.getFullYear() === currentDate.getFullYear()
+      );
+    });
+  }, [accountTransactions]);
 
   //    group expenses by category
-  const expensesByCategory = currentMonthExpenses.reduce((acc, transaction) => {
+  const expensesByCategory = useMemo(() => currentMonthExpenses.reduce((acc, transaction) => {
     const category = transaction.category;
     if (!acc[category]) {
       acc[category] = 0;
     }
     acc[category] += transaction.amount;
     return acc;
-  }, {});
+  }, {}), [currentMonthExpenses]);
 
   //   format data for pie chart
-  const pieChartData = Object.entries(expensesByCategory).map(
+  const pieChartData = useMemo(() => Object.entries(expensesByCategory).map(
     ([category, amount]) => ({
       name: category,
       value: amount,
     })
-  );
+  ), [expensesByCategory]);
 
   return (
  
@@ -94,7 +112,7 @@ const DashboardOverview = ({ accounts, transactions }) => {
               <SelectValue placeholder="Select Account" />
             </SelectTrigger>
             <SelectContent>
-              {accounts.map((account) => (
+              {safeAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.name}
                 </SelectItem>
@@ -158,7 +176,11 @@ const DashboardOverview = ({ accounts, transactions }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 pb-5">
-          {pieChartData.length === 0 ? (
+          {!mounted ? (
+            <p className="text-center text-muted-foreground py-4">
+              Loading chart...
+            </p>
+          ) : pieChartData.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">
               No expenses this month
             </p>

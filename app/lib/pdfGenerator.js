@@ -2,44 +2,46 @@ import { chromium } from "playwright-core";
 import chromiumPkg from "@sparticuz/chromium";
 
 export async function generatePDF(htmlContent) {
-  // Launch Chromium from Sparticuz (Vercel-compatible)
-  const browser = await chromium.launch({
-    args: chromiumPkg.args,
-    executablePath: await chromiumPkg.executablePath(),
-    headless: true,
-  });
+  let browser;
 
-  const page = await browser.newPage();
+  try {
+    browser = await chromium.launch({
+      args: [...chromiumPkg.args, "--disable-dev-shm-usage", "--no-sandbox"],
+      executablePath: await chromiumPkg.executablePath(),
+      headless: true,
+    });
 
+    const page = await browser.newPage();
+    page.setDefaultTimeout(15000);
 
-  await page.setContent(htmlContent, {
-    waitUntil: "networkidle",
-  });
+    await page.route("**/*", (route) => {
+      const request = route.request();
+      if (request.resourceType() === "document") return route.continue();
+      return route.abort();
+    });
 
-  await page.evaluate(async () => {
-    const imgs = Array.from(document.images);
-    await Promise.all(
-      imgs.map((img) =>
-        img.complete
-          ? Promise.resolve()
-          : new Promise((res) => {
-              img.onload = img.onerror = res;
-            })
-      )
-    );
-  });
+    await page.setContent(htmlContent, {
+      waitUntil: "domcontentloaded",
+      timeout: 15000,
+    });
 
-  // Force print layout
-  await page.emulateMedia({ media: "print" });
+    await page.emulateMedia({ media: "print" });
 
-  // Generate PDF
-  const pdfBuffer = await page.pdf({
-    format: "A4",
-    printBackground: true,
-    preferCSSPageSize: true,
-  });
-
-  await browser.close();
-
-  return pdfBuffer;
+    return await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+      margin: {
+        top: "12mm",
+        right: "10mm",
+        bottom: "12mm",
+        left: "10mm",
+      },
+      timeout: 25000,
+    });
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import { getAccountWithTransactions } from '@/actions/accounts'
+import { getAccountChartData, getAccountWithTransactions } from '@/actions/accounts'
 import { notFound } from 'next/navigation';
 import React, { Suspense } from 'react'
 import TransactionTable from '../_components/transactions-table';
@@ -6,10 +6,20 @@ import { BarLoader } from 'react-spinners';
 import AccountChart from '../_components/accountChart';
 import { getUserInfo } from '@/actions/user';
 
-const AccountPage = async ({params}) => {
-    const { id } = await params
+export const dynamic = 'force-dynamic';
 
-    const accountData= await getAccountWithTransactions(id);
+const AccountPage = async ({params, searchParams}) => {
+    const { id } = await params
+    const query = await searchParams;
+
+    const accountData= await getAccountWithTransactions(id, {
+        page: query?.page,
+        search: query?.search,
+        type: query?.type,
+        recurring: query?.recurring,
+        sort: query?.sort,
+        direction: query?.direction,
+    });
 
     const userInfo = await getUserInfo();
 
@@ -21,7 +31,8 @@ const AccountPage = async ({params}) => {
         notFound();
     }
 
-    const {transactions, ...account}= accountData;
+    const {transactions, pagination, ...account}= accountData;
+    const initialChartTransactions = await getAccountChartData(id, "1M");
     
     //  { console.log(JSON.stringify(account))};
     //  { console.log(JSON.stringify(userInfo))};
@@ -48,7 +59,11 @@ const AccountPage = async ({params}) => {
      <Suspense 
      fallback={<BarLoader className='mt-4' width={"100%"} color='#9333ea'/>}
      >
-        <AccountChart transactions={transactions} userInfo={userInfo}/>
+        <AccountChart
+            accountId={id}
+            initialTransactions={initialChartTransactions}
+            userInfo={userInfo}
+        />
      </Suspense>
 
      {/* Transactions Table */}
@@ -56,7 +71,10 @@ const AccountPage = async ({params}) => {
      <Suspense 
      fallback={<BarLoader className='mt-4' width={"100%"} color='#9333ea'/>}
      >
-        <TransactionTable transactions={transactions}/>
+        <TransactionTable
+            transactions={transactions}
+            pagination={pagination}
+        />
      </Suspense>
     
         

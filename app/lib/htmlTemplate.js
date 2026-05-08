@@ -1,4 +1,23 @@
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatReportDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return new Intl.DateTimeFormat("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(date);
+}
+
 export function generateHTMLTemplate(transactions, totals, userDetails = null) {
   return `
     <!DOCTYPE html>
@@ -86,9 +105,6 @@ export function generateHTMLTemplate(transactions, totals, userDetails = null) {
           tr:nth-child(even) {
             background-color: #f9f9f9;
           }
-          tr:hover {
-            background-color: #f5f5f5;
-          }
           .date-range {
             text-align: center;
             margin: 20px 0;
@@ -110,8 +126,8 @@ export function generateHTMLTemplate(transactions, totals, userDetails = null) {
             <p class="tagline">Effortless spending management</p>
           </div>
           <div class="user-details">
-            <h3>${userDetails?.name || 'Not Available'}</h3>
-            <p> ${userDetails?.email || 'Not Available'}</p>
+            <h3>${escapeHtml(userDetails?.name || 'Not Available')}</h3>
+            <p> ${escapeHtml(userDetails?.email || 'Not Available')}</p>
           </div>
         </div>
         
@@ -119,15 +135,15 @@ export function generateHTMLTemplate(transactions, totals, userDetails = null) {
         <div class="totals">
           <div class="total">
             <p>Total Income</p>
-            <p class="income">₹ ${totals.income.toFixed(2)}</p>
+            <p class="income">₹ ${(totals.income || 0).toFixed(2)}</p>
           </div>
           <div class="total">
             <p>Total Expenses</p>
-            <p class="expense">₹ ${totals.expense.toFixed(2)}</p>
+            <p class="expense">₹ ${(totals.expense || 0).toFixed(2)}</p>
           </div>
           <div class="total">
             <p>Net</p>
-            <p class="${totals.income - totals.expense >= 0 ? 'income' : 'expense'}">₹ ${(totals.income - totals.expense).toFixed(2)}</p>
+            <p class="${totals.income - totals.expense >= 0 ? 'income' : 'expense'}">₹ ${((totals.income || 0) - (totals.expense || 0)).toFixed(2)}</p>
           </div>
         </div>
         <table>
@@ -142,10 +158,10 @@ export function generateHTMLTemplate(transactions, totals, userDetails = null) {
           <tbody>
             ${transactions.map(transaction => `
               <tr>
-                <td>${new Date(transaction.date).toLocaleDateString()}</td>
-                <td>${transaction.description}</td>
-                <td>${transaction.category}</td>
-                <td class="${transaction.type === 'INCOME' ? 'income' : 'expense'}">₹ ${transaction.amount.toFixed(2)}</td>
+                <td>${formatReportDate(transaction.date)}</td>
+                <td>${escapeHtml(transaction.description || "Untitled Transaction")}</td>
+                <td>${escapeHtml(transaction.category)}</td>
+                <td class="${transaction.type === 'INCOME' ? 'income' : 'expense'}">₹ ${(transaction.amount || 0).toFixed(2)}</td>
               </tr>
             `).join('')}
           </tbody>

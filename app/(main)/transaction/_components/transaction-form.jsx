@@ -30,6 +30,9 @@ import ReceiptScanner from "./receipt-scaner";
 
 const AddTransactionForm = ({ accounts, categories }) => {
   const router = useRouter();
+  const defaultAccountId =
+    accounts.find((account) => account.isDefault)?.id || accounts[0]?.id || "";
+
   const {
     register,
     setValue,
@@ -41,7 +44,7 @@ const AddTransactionForm = ({ accounts, categories }) => {
   } = useForm({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      accountId: accounts.find((ac) => ac.isDefault?.id),
+      accountId: defaultAccountId,
       type: "EXPENSE",
       amount: "",
       date: new Date(),
@@ -84,8 +87,13 @@ const AddTransactionForm = ({ accounts, categories }) => {
   const handleScanComplete = (data) => {
     //  console.log(data);
     if (data) {
-      setValue("amount", data.amount.toString());
-      setValue("date", new Date(data.date));
+      if (Number.isFinite(data.amount)) {
+        setValue("amount", data.amount.toString());
+      }
+      const scannedDate = new Date(data.date);
+      if (!Number.isNaN(scannedDate.getTime())) {
+        setValue("date", scannedDate);
+      }
       if (data.description) {
         setValue("description", data.description);
       }

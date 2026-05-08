@@ -18,11 +18,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { categoryColors } from "@/data/categories";
 import useFetch from "@/hooks/use-fetch";
 
-import { format, set } from "date-fns";
+import { format } from "date-fns";
 import { ChevronDown, ChevronUp, Clock, MoreHorizontal, RefreshCw, SearchIcon, Trash, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { BarLoader } from "react-spinners";
 import { toast } from "sonner";
 
@@ -34,95 +34,71 @@ const RECURRING_INTERVALS = {
   YEARLY: "Yearly",
 };
 
-const TransactionTable = ({ transactions }) => {
+const TransactionTable = ({ transactions = [], pagination }) => {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState([]);
-  const [sortConfig, setSortConfig] = useState({
-    field:"date",
-    direction:"desc",
-  })
+  const [sortConfig, setSortConfig] = useState(() => ({
+    field: searchParams.get("sort") || "date",
+    direction: searchParams.get("direction") || "desc",
+  }));
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const typeFilter = searchParams.get("type") || "";
+  const recurringFilter = searchParams.get("recurring") || "";
 
-  // console.log(selectedIds);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [recurringFilter, setRecurringFilter] = useState("");
-
-
-  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
 
   useEffect(() => {
-  const timer = setTimeout(() => {
-    setDebouncedSearch(searchTerm);
-  }, 600); 
-
-  return () => clearTimeout(timer);
-}, [searchTerm]);
- 
-  const filteredAndSortedTransactions = useMemo(()=>{
-    let result = [...transactions];
-
-    // Apply search filter
-    if(debouncedSearch){
-      const searchLower= searchTerm.toLowerCase();
-      result= result.filter((transaction)=>
-        transaction.description.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Apply rescurring filter
-    if(recurringFilter){
-      result= result.filter((transaction)=>{
-        if(recurringFilter === "recurring") return transaction.isRecurring;
-        return !transaction.isRecurring;
-      })
-    }
-
-    // Apply type filter
-    if(typeFilter){
-      result= result.filter((transaction)=> transaction.type === typeFilter);
-    }
-
-    // Apply sorting
-    result.sort((a,b)=>{
-      let comp=0;
-      switch(sortConfig.field){
-        case "date":
-          comp= new Date(a.date) - new Date(b.date);
-          break;
-
-        case "amount":
-          comp= a.amount - b.amount;
-          break;
-          
-        case "category" :
-          comp= a.category.localeCompare(b.category);
-          break;
-        
-        default : comp= 0;
-      }
-
-      return sortConfig.direction === "asc" ? comp : - comp;
+    setSearchTerm(searchParams.get("search") || "");
+    setSortConfig({
+      field: searchParams.get("sort") || "date",
+      direction: searchParams.get("direction") || "desc",
     });
-    return result;
+  }, [searchParams]);
 
-  },[
-    transactions,
-    debouncedSearch,
-    typeFilter,
-    recurringFilter,
-    sortConfig
-  ]);
+  const updateQuery = (updates) => {
+    const params = new URLSearchParams(searchParams.toString());
 
-  // console.log("Raw :", searchTerm);
-// console.log("Debounced :", debouncedSearch);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (!value || value === "all") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+
+    if (!Object.prototype.hasOwnProperty.call(updates, "page")) {
+      params.set("page", "1");
+    }
+
+    const queryString = params.toString();
+    startTransition(() => {
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    });
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      updateQuery({ search: searchTerm.trim() });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const pageTransactions = useMemo(() => transactions, [transactions]);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [transactions]);
 
   const handleSort = (field) => {
-    setSortConfig((current)=>({
+    const nextConfig = {
       field,
-      direction: current.field == field && current.direction === "asc" ? "desc" : "asc"
-
-    }));
+      direction: sortConfig.field === field && sortConfig.direction === "asc" ? "desc" : "asc",
+    };
+    setSortConfig(nextConfig);
+    updateQuery({ sort: nextConfig.field, direction: nextConfig.direction });
   };
 
   const handleSelect = (id)=>{
@@ -136,10 +112,10 @@ const TransactionTable = ({ transactions }) => {
 
   const handleSelectAll = ()=>{
     setSelectedIds((current)=>{
-    if(current.length === filteredAndSortedTransactions.length){
+    if(current.length === pageTransactions.length){
       return [];
     } else{
-      return filteredAndSortedTransactions.map((t)=> t.id)
+      return pageTransactions.map((t)=> t.id)
     }}
   )
     
@@ -160,28 +136,44 @@ const TransactionTable = ({ transactions }) => {
      ){
       return ;
      }
-     deleteFn(selectedIds);
-    //  deleteFn([transaction.id])
-    {console.log("Deleted")}
+     await deleteFn(selectedIds);
   }
 
   useEffect(()=>{
     if(deleted && !deleteLoading){
       toast.error("Transactions Deleted Successfully");
+      router.refresh();
     }
   },[deleted, deleteLoading]);
 
   const handleClearFilter= ()=>{
     setSearchTerm("");
-    setTypeFilter("");
-    setRecurringFilter("");
     setSelectedIds([]);
+    updateQuery({
+      search: "",
+      type: "",
+      recurring: "",
+      page: "1",
+    });
 
   }
+
+  const handleTypeFilter = (value) => {
+    updateQuery({ type: value });
+  };
+
+  const handleRecurringFilter = (value) => {
+    updateQuery({ recurring: value });
+  };
+
+  const handlePageChange = (nextPage) => {
+    updateQuery({ page: String(nextPage) });
+  };
 
   return (
     <div className="space-y-4 ">
       {deleteLoading && <BarLoader className="mt-4" width={"100%"} color="#9333ea"/>}
+      {isPending && <BarLoader className="mt-4" width={"100%"} color="#9333ea"/>}
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -197,22 +189,24 @@ const TransactionTable = ({ transactions }) => {
         </div>
 
         <div className="flex gap-2">
-        <Select value={typeFilter} onValueChange={setTypeFilter}>  
+        <Select value={typeFilter || "all"} onValueChange={handleTypeFilter}>  
             <SelectTrigger>
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="INCOME">Income</SelectItem>
               <SelectItem value="EXPENSE">Expense</SelectItem>
              
             </SelectContent>
         </Select>
 
-        <Select value={recurringFilter} onValueChange={(value)=>setRecurringFilter(value)}>  
+        <Select value={recurringFilter || "all"} onValueChange={handleRecurringFilter}>  
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="All Transactions" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All Transactions</SelectItem>
               <SelectItem value="recurring">Recurring Only</SelectItem>
               <SelectItem value="non-recurring">Non-recurring Only</SelectItem>
              
@@ -255,8 +249,8 @@ const TransactionTable = ({ transactions }) => {
                 <Checkbox onCheckedChange={handleSelectAll}
                    checked= {
                    ( selectedIds.length === 
-                    filteredAndSortedTransactions.length) &&
-                    filteredAndSortedTransactions.length > 0
+                    pageTransactions.length) &&
+                    pageTransactions.length > 0
                    }
                 />
               </TableHead>
@@ -319,25 +313,25 @@ const TransactionTable = ({ transactions }) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-              {filteredAndSortedTransactions.length === 0 ? (
+              {pageTransactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
                     No Transactions Found
                   </TableCell>
                 </TableRow>
               ):(
-                filteredAndSortedTransactions.map((transaction) => (
+                pageTransactions.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell>
                       <Checkbox  onCheckedChange={()=> handleSelect(transaction.id)}
                         checked= {selectedIds.includes(transaction.id)}/>
                     </TableCell>
-                    <TableCell>{format(transaction.date, "PP")}</TableCell>
-                    <TableCell>{transaction.description}</TableCell>
+                    <TableCell>{format(new Date(transaction.date), "PP")}</TableCell>
+                    <TableCell>{transaction.description || "Untitled Transaction"}</TableCell>
 
                     <TableCell className="capitalize">
                       <span
-                        style={{background: categoryColors[transaction.category]}}
+                        style={{background: categoryColors[transaction.category] || "#6b7280"}}
                         className="px-2 py-1 rounded text-white text-sm"
                       >
                          {transaction.category}
@@ -370,7 +364,7 @@ const TransactionTable = ({ transactions }) => {
                               <div className="font-medium">Next Date:</div>
                               <div>
                                 {format(
-                                  new Date(transaction.nextRecurringDate),
+                                  new Date(transaction.nextRecurringDate || transaction.date),
                                   "PPP"
                                 )}
                               </div>
@@ -406,7 +400,10 @@ const TransactionTable = ({ transactions }) => {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => deleteFn([transaction.id])}
+                          onClick={async () => {
+                            await deleteFn([transaction.id]);
+                            router.refresh();
+                          }}
                         >
                           Delete
                         </DropdownMenuItem>
@@ -420,6 +417,30 @@ const TransactionTable = ({ transactions }) => {
           
           </TableBody>
         </Table>
+      </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">
+          Page {pagination?.page || 1} of {pagination?.totalPages || 1}
+          {typeof pagination?.totalCount === "number" ? ` (${pagination.totalCount} transactions)` : ""}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange((pagination?.page || 1) - 1)}
+            disabled={!pagination?.hasPreviousPage || isPending || deleteLoading}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange((pagination?.page || 1) + 1)}
+            disabled={!pagination?.hasNextPage || isPending || deleteLoading}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );

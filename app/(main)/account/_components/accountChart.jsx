@@ -1,5 +1,5 @@
 "use client";
-import { generateHTMLTemplate } from "@/app/lib/htmlTemplate";
+import { getAccountChartData } from "@/actions/accounts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,9 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { endOfDay, format, startOfDay, subDays } from "date-fns";
+import { format } from "date-fns";
 import { Download } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useTransition } from "react";
 import {
   Bar,
   BarChart,
@@ -36,42 +36,55 @@ const DATE_RANGES = {
   All: { label: "All Time", days: null },
 };
 
-const AccountChart = ({ transactions, userInfo }) => {
+const AccountChart = ({ accountId, initialTransactions }) => {
   const [dateRange, setDateRange] = useState("1M");
+  const [transactions, setTransactions] = useState(initialTransactions || []);
+  const [mounted, setMounted] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    startTransition(async () => {
+      try {
+        const nextTransactions = await getAccountChartData(accountId, dateRange);
+        setTransactions(nextTransactions || []);
+      } catch (error) {
+        console.error("Failed to load chart data:", error);
+        setTransactions([]);
+      }
+    });
+  }, [accountId, dateRange, mounted]);
 
   const filterData = useMemo(() => {
-    const range = DATE_RANGES[dateRange];
-    const now = new Date();
+    const grouped = transactions.reduce((acc, transaction) => {
+      const transactionDate = new Date(transaction.date);
+      if (Number.isNaN(transactionDate.getTime())) return acc;
 
-    const startDate = range.days
-      ? startOfDay(subDays(now, range.days))
-      : startOfDay(new Date(0));
+      const dateKey = format(transactionDate, "yyyy-MM-dd");
+      const date = format(transactionDate, "MMM dd");
 
-    //   filter transaction within date ranges
-    const filtered = transactions.filter(
-      (t) => new Date(t.date) >= startDate && new Date(t.date) <= endOfDay(now)
-    );
-
-    const grouped = filtered.reduce((acc, transaction) => {
-      const date = format(new Date(transaction.date), "MMM dd");
-
-      if (!acc[date]) {
-        acc[date] = { date, income: 0, expense: 0 };
+      if (!acc[dateKey]) {
+        acc[dateKey] = { date, dateKey, income: 0, expense: 0 };
       }
 
       if (transaction.type === "INCOME") {
-        acc[date].income += transaction.amount;
+        acc[dateKey].income += transaction.amount || 0;
       } else {
-        acc[date].expense += transaction.amount;
+        acc[dateKey].expense += transaction.amount || 0;
       }
       return acc;
     }, {});
 
     // convert the data to array sort by date
     return Object.values(grouped).sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
+      (a, b) => new Date(a.dateKey) - new Date(b.dateKey)
     );
-  }, [transactions, dateRange]);
+  }, [transactions]);
 
   //   console.log(filterData);
 
@@ -88,46 +101,32 @@ const AccountChart = ({ transactions, userInfo }) => {
   //  console.log(totals);
 
   const handleDownloadPDF = async () => {
-    // Get the original filtered transactions for the PDF
-    const range = DATE_RANGES[dateRange];
-    const now = new Date();
-    const startDate = range.days
-      ? startOfDay(subDays(now, range.days))
-      : startOfDay(new Date(0));
-    
-    const filteredTransactions = transactions.filter(
-      (t) => new Date(t.date) >= startDate && new Date(t.date) <= endOfDay(now)
-    );
-    
-    const chartTotals = { ...totals };
+    setIsDownloading(true);
 
-   
-    const userDetails = {
-      name: userInfo?.name || "",
-      email: userInfo?.email || "",
-    };
+    try {
+      const response = await fetch(
+        `/api/accounts/${accountId}/report?range=${encodeURIComponent(dateRange)}`
+      );
 
-    const htmlContent = generateHTMLTemplate(filteredTransactions, chartTotals, userDetails);
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
 
-    const response = await fetch('/api/generatePdf', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ htmlContent }),
-    });
+      const pdfBlob = await response.blob();
+      const pdfUrl = URL.createObjectURL(pdfBlob);
 
-    // console.log(response);
-
-    const pdfBlob = await response.blob();
-    const pdfUrl = URL.createObjectURL(pdfBlob);
-
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = 'SpendPath_transactions.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const link = document.createElement("a");
+      link.href = pdfUrl;
+      link.download = "SpendPath_transactions.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(pdfUrl);
+    } catch (error) {
+      console.error("PDF download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -137,7 +136,7 @@ const AccountChart = ({ transactions, userInfo }) => {
           Transactions Overview
         </CardTitle>
       <div className="flex items-center gap-2">
-        <Select defaultValue={dateRange} onValueChange={setDateRange}>
+        <Select value={dateRange} onValueChange={setDateRange}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Select Range" />
           </SelectTrigger>
@@ -153,7 +152,10 @@ const AccountChart = ({ transactions, userInfo }) => {
         </Select>
 
         {/* Download pdf of Transactions */}
-        <Button variant="outline" onClick={handleDownloadPDF}><Download className="h-6 w-6"/>Download PDF</Button>
+        <Button variant="outline" onClick={handleDownloadPDF} disabled={isDownloading}>
+          <Download className="h-6 w-6"/>
+          {isDownloading ? "Preparing..." : "Download PDF"}
+        </Button>
         </div>
       </CardHeader>
 
@@ -189,6 +191,11 @@ const AccountChart = ({ transactions, userInfo }) => {
         </div>
 
         <div className="h-[300px]">
+          {!mounted || isPending ? (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              Loading chart...
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={filterData}
@@ -230,6 +237,7 @@ const AccountChart = ({ transactions, userInfo }) => {
               />
             </BarChart>
           </ResponsiveContainer>
+          )}
         </div>
       </CardContent>
     </Card>

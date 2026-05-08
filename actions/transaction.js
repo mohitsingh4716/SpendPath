@@ -10,7 +10,7 @@ const genAI= new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const serializeAmount= (obj)=>({
     ...obj,
-    amount: obj.amount.toNumber(),
+    amount: obj.amount?.toNumber?.() ?? obj.amount,
 });
 
 export async function createTransaction(data){
@@ -86,8 +86,8 @@ export async function createTransaction(data){
             return newTransaction;
         });
 
-        revalidatePath("dashboard");
-        revalidatePath(`account/${transaction.accountId}`);
+        revalidatePath("/dashboard");
+        revalidatePath(`/account/${transaction.accountId}`);
      return {
          success: true,
          data: serializeAmount(transaction),
